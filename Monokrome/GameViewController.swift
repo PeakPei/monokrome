@@ -8,46 +8,86 @@
 
 import UIKit
 import SpriteKit
+import GameKit
+import GoogleMobileAds
 
 class GameViewController: UIViewController {
-
+    
+    let interstitialAdUnitID = "ca-app-pub-8564143878629299/2765979360"
+    
+    var interstitial: GADInterstitial!
+    
+    var interstitialNumberOfTimesPresented: Int = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if let scene = GameScene(fileNamed:"GameScene") {
-            // Configure the view.
+        
+        if let scene = GameScene(fileNamed: "GameScene") {
             let skView = self.view as! SKView
-            skView.showsFPS = true
-            skView.showsNodeCount = true
             
-            /* Sprite Kit applies additional optimizations to improve rendering performance */
             skView.ignoresSiblingOrder = true
             
-            /* Set the scale mode to scale to fit the window */
-            scene.scaleMode = .AspectFill
+            scene.scaleMode = .resizeFill
+            scene.interstitialDelegate = self
+            scene.parentViewController = self
             
             skView.presentScene(scene)
         }
     }
-
-    override func shouldAutorotate() -> Bool {
-        return true
+    
+    override var shouldAutorotate : Bool {
+        return false
     }
-
-    override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
-        if UIDevice.currentDevice().userInterfaceIdiom == .Phone {
-            return .AllButUpsideDown
-        } else {
-            return .All
-        }
+    
+    override var supportedInterfaceOrientations : UIInterfaceOrientationMask {
+        return .portrait
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Release any cached data, images, etc that aren't in use.
     }
-
-    override func prefersStatusBarHidden() -> Bool {
+    
+    override var prefersStatusBarHidden : Bool {
         return true
     }
+    
+}
+
+extension GameViewController: GKGameCenterControllerDelegate {
+    
+    func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
+        gameCenterViewController.dismiss(animated: true, completion: nil)
+    }
+    
+}
+
+extension GameViewController: InterstitialDelegate {
+    
+    func prepareInterstitial() {
+        if interstitial == nil || interstitial.hasBeenUsed {
+            interstitial = GADInterstitial(adUnitID: interstitialAdUnitID)
+            let request = GADRequest()
+            request.keywords = ["gaming", "arcade", "strategy", "games", "fun", "endless", "2D"]
+            request.testDevices = [kGADSimulatorID]
+            interstitial.load(request)
+        }
+    }
+    
+    func presentInterstitial() {
+        if interstitial.isReady {
+            if interstitialNumberOfTimesPresented % 4 == 0 {
+                interstitial.present(fromRootViewController: self)
+            }
+            interstitialNumberOfTimesPresented += 1
+        }
+    }
+    
+}
+
+protocol InterstitialDelegate {
+    
+    func prepareInterstitial()
+    
+    func presentInterstitial()
+    
 }
